@@ -7,6 +7,7 @@ import { LikeButton } from "@/components/ui"
 import { Pokemon, PokemonListResponse } from "@/interfaces"
 import { localeFavorites } from "@/utils"
 import { pokeApi } from '@/api'
+import { getPokemonInfo } from "@/utils/pokemons"
 
 
 type Props = {
@@ -90,19 +91,24 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const paths = data.results.map(poke => ({ params: { name: poke.name } }))
   return {
     paths,
-    fallback: false
+    //False -> redirect to 404; Blocking -> permite pasar el parametro hacia getStaticProps
+    fallback: "blocking" //false 
   }
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { name } = params as { name: string }
-  const { data } = await pokeApi<Pokemon>(`/pokemon/${name}`)
-  const pokemon = {
-    name: data.name,
-    id: data.id,
-    sprites: data.sprites
-  }
 
+  const pokemon = await getPokemonInfo(name);
+
+  if (!pokemon) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false
+      },
+    }
+  }
   return {
     props: {
       pokemon
